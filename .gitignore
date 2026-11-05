@@ -1,0 +1,33 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Downloaded raw dataset
+data/*.gz
+
+# Research paper PDF
+2939672.2939754.pdf
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Ignore generated results by default
+results/*
+
+# Keep final figures
+!results/figures/
+!results/figures/*.png
+
+# Keep final repeated-run summary tables
+!results/repeated_runs/
+results/repeated_runs/*
+!results/repeated_runs/repeated_run_mean_sd.csv
+!results/repeated_runs/all_repeated_run_results.csv

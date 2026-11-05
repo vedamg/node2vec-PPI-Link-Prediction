@@ -1,0 +1,10 @@
+pandas
+numpy
+networkx
+matplotlib
+scikit-learn
+node2vec
+requests
+tqdm
+
+setuptools<81

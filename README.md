@@ -355,14 +355,21 @@ node2vec-PPI-Link-Prediction/
 │   └── plot_sampling_comparison.py
 │
 ├── results/
+│   ├── figures/
+│   │   ├── repeated_run_roc_auc.png
+│   │   └── repeated_run_average_precision.png
+│   │
+│   ├── repeated_runs/
+│   │   ├── seed_42/
+│   │   ├── seed_123/
+│   │   ├── seed_2026/
+│   │   ├── all_repeated_run_results.csv
+│   │   └── repeated_run_mean_sd.csv
+│   │
 │   ├── network_statistics.csv
-│   ├── cleaned_interactions.csv
-│   └── repeated_runs/
-│       ├── seed_42/
-│       ├── seed_123/
-│       ├── seed_2026/
-│       ├── all_repeated_run_results.csv
-│       └── repeated_run_mean_sd.csv
+│   ├── node2vec_comparison.csv
+│   ├── degree_matched_comparison.csv
+│   └── combined_sampling_comparison.csv
 │
 ├── requirements.txt
 ├── .gitignore

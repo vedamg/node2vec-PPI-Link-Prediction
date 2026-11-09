@@ -1,4 +1,3 @@
-
 # Predicting Protein–Protein Interactions Using node2vec
 
 ## Project Overview
@@ -7,13 +6,27 @@ This project investigates whether node2vec can learn useful vector representatio
 
 The project also examines how different node2vec random-walk parameters and negative-sampling strategies influence link-prediction performance.
 
-### Research Question
+## Research Question
 
 Can node2vec learn useful representations of proteins from a PPI network, and how do different random-walk parameters affect its ability to predict missing interactions?
 
+An additional experimental question is:
+
+How does the choice of negative-sampling strategy influence the relative performance of node2vec and Common Neighbors?
+
+## Hypotheses
+
+Before conducting the experiments, the following expectations were considered:
+
+1. Under random negative sampling, Common Neighbors is expected to perform well because randomly selected protein pairs are unlikely to share common neighbors.
+2. Under degree-matched negative sampling, Common Neighbors is expected to perform less effectively because the negative pairs have more similar degree characteristics to positive pairs.
+3. Node2vec may retain better predictive performance under degree-matched sampling because its embeddings represent broader network context rather than relying only on shared neighbors.
+
+The experimental results were broadly consistent with these expectations.
+
 ## Dataset
 
-The project uses human physical protein–protein interaction data from **STRING version 12.5**.
+The project uses human physical protein–protein interaction data from STRING version 12.5.
 
 - Organism: *Homo sapiens*
 - Taxonomy ID: 9606
@@ -23,11 +36,11 @@ The project uses human physical protein–protein interaction data from **STRING
 
 **Data source:**
 
-[https://stringdb-downloads.org/download/stream/protein.physical.links.v12.5/9606.protein.physical.links.v12.5.min700.onlyAB.txt.gz](https://stringdb-downloads.org/download/stream/protein.physical.links.v12.5/9606.protein.physical.links.v12.5.min700.onlyAB.txt.gz)
+https://stringdb-downloads.org/download/stream/protein.physical.links.v12.5/9606.protein.physical.links.v12.5.min700.onlyAB.txt.gz
 
 The dataset is downloaded using `scripts/download_data.py`.
 
-### Network preprocessing
+## Network Preprocessing
 
 The preprocessing pipeline:
 
@@ -50,7 +63,7 @@ The cleaned network contains:
 | Largest connected component | 13,996 proteins |
 | Average clustering coefficient | 0.380 |
 
-Link prediction experiments are performed on the largest connected component.
+Link-prediction experiments are performed on the largest connected component.
 
 ## Methods
 
@@ -85,11 +98,15 @@ The remaining node2vec parameters are:
 - Context window: 10
 - Workers: 1
 
+These three configurations represent a small parameter comparison rather than an exhaustive search of possible p and q values.
+
 ### 3. Link prediction
 
 The Hadamard product of two protein embedding vectors is used to represent a candidate protein pair.
 
 A machine-learning pipeline consisting of StandardScaler and Logistic Regression is trained to distinguish positive and negative protein pairs.
+
+This is a supervised link-prediction approach: the classifier learns from labelled protein-pair examples using features derived from node2vec embeddings.
 
 ### 4. Negative sampling strategies
 
@@ -115,9 +132,15 @@ Importantly, negative pairs represent interactions not recorded in the dataset; 
 
 ### 5. Common Neighbors baseline
 
-Common Neighbors is included as a traditional network-based link-prediction baseline.
+Common Neighbors is included as a classical, unsupervised network-based link-prediction baseline.
 
-The score for a protein pair is the number of shared neighbors in the training network.
+The score for a protein pair is the number of shared neighbors in the training network:
+
+`CN(u,v) = |N(u) ∩ N(v)|`
+
+where N(u) and N(v) represent the neighbors of proteins u and v.
+
+**Comparison with node2vec:** Common Neighbors directly scores pairs using shared-neighbor information, whereas node2vec uses learned embeddings and a supervised Logistic Regression classifier. Therefore, these methods represent different approaches to link prediction rather than identical classifiers.
 
 ### 6. Repeated experiments
 
@@ -162,19 +185,19 @@ The following values represent mean ± standard deviation across three random se
 | Outward | 0.9363 ± 0.0020 | 0.9480 ± 0.0014 |
 | Common Neighbors | 0.9209 ± 0.0022 | 0.9185 ± 0.0022 |
 
-### Performance Visualizations
+## Performance Visualizations
 
 The following figures compare the performance of the three node2vec configurations and the Common Neighbors baseline under random and degree-matched negative sampling. Bars represent mean performance across three random seeds (42, 123, and 2026), and error bars represent standard deviation.
 
-**ROC-AUC**
+### ROC-AUC
 
 ![ROC-AUC comparison](results/figures/repeated_run_roc_auc.png)
 
-**Average Precision**
+### Average Precision
 
 ![Average Precision comparison](results/figures/repeated_run_average_precision.png)
 
-### Interpretation
+## Interpretation
 
 All three node2vec configurations achieved strong link-prediction performance in both evaluation settings.
 
@@ -184,21 +207,53 @@ Common Neighbors performed best under random negative sampling. However, its per
 
 Under degree-matched sampling, all three node2vec configurations achieved higher ROC-AUC and Average Precision than Common Neighbors.
 
-These findings suggest that the evaluation strategy influences measured link-prediction performance and the relative ranking of prediction methods. Node2vec embeddings may capture useful network patterns beyond direct common-neighbor overlap in the degree-matched evaluation.
+These findings suggest that the negative-sampling strategy influences measured link-prediction performance and the relative ranking of prediction methods.
+
+Node2vec-based features may capture useful network information beyond simple common-neighbor overlap. However, the current experiments do not establish which network properties contribute to this performance, and further controlled experiments would be needed to support that interpretation.
 
 ## Limitations
 
-1. Only three random seeds were used; more repetitions would provide a stronger assessment of robustness.
-2. Degree matching is approximate because it uses logarithmic degree bins with a tolerance of one bin.
-3. Only one biological interaction dataset was examined.
-4. STRING interactions are computationally integrated evidence and do not necessarily represent experimentally verified interactions in every case.
-5. Negative examples are unobserved interactions, not confirmed non-interactions.
-6. No experimental biological validation of predicted interactions was performed.
-7. No statistical significance testing was conducted to establish differences between configurations.
+- Only three random seeds were used; more repetitions would provide a stronger assessment of robustness.
+- Degree matching is approximate because it uses logarithmic degree bins with a tolerance of one bin.
+- Only one biological interaction dataset was examined.
+- STRING interactions are computationally integrated evidence and do not necessarily represent experimentally verified interactions in every case.
+- Negative examples are unobserved interactions, not confirmed non-interactions.
+- No experimental biological validation of predicted interactions was performed.
+- No statistical significance testing was conducted to establish differences between configurations.
+- Only three node2vec parameter configurations were evaluated; a broader parameter search could identify other useful configurations.
+- **Training and testing feature context:** Positive training pairs are present in the training network used to generate node2vec embeddings, whereas held-out positive test pairs are absent. This creates a potential difference in feature context between training and testing examples and may influence the evaluation. The current implementation does not use a separate validation set of removed positive edges to train the classifier.
+- Common Neighbors is an unsupervised scoring method, whereas node2vec uses a supervised Logistic Regression classifier. Their comparison should therefore be interpreted as a comparison of different link-prediction approaches.
 
-The results should therefore be interpreted as performance on a defined link-prediction benchmark rather than direct confirmation of novel biological interactions.
+The results should be interpreted as performance on a defined link-prediction benchmark rather than direct confirmation of novel biological interactions.
+
+## Conclusion
+
+This project investigated node2vec-based protein interaction prediction and examined how negative-sampling strategies influence its performance relative to Common Neighbors.
+
+Common Neighbors performed best under random negative sampling, while node2vec configurations performed better under approximate degree-matched negative sampling.
+
+These findings demonstrate that the choice of negative-sampling strategy can substantially affect the evaluation and relative ranking of network-based link-prediction methods.
+
+Although node2vec showed promising performance, further validation across datasets, broader parameter exploration and improved experimental designs are required before drawing conclusions about its ability to identify novel biological interactions.
 
 ## How to Run the Project
+Run the scripts from the project root directory.
+
+The general workflow is:
+
+1. Download the STRING dataset using download_data.py.
+
+2. Preprocess the interaction data using preprocess_network.py.
+
+3. Prepare the training and testing data using prepare_link_prediction_v2.py.
+
+4. Generate node2vec embeddings using generate_embeddings_v2.py.
+
+5. Run link-prediction evaluation using link_prediction_v2.py.
+
+6. Run the Common Neighbors baseline using common_neighbors.py.
+
+7. Generate result visualizations using the plotting scripts.
 
 ### Requirements
 
@@ -228,9 +283,7 @@ Run once for each seed:
 
 ```bash
 python scripts/prepare_link_prediction_v2.py 42
-
 python scripts/prepare_link_prediction_v2.py 123
-
 python scripts/prepare_link_prediction_v2.py 2026
 ```
 
@@ -238,9 +291,7 @@ python scripts/prepare_link_prediction_v2.py 2026
 
 ```bash
 python scripts/generate_embeddings_v2.py 42
-
 python scripts/generate_embeddings_v2.py 123
-
 python scripts/generate_embeddings_v2.py 2026
 ```
 
@@ -248,9 +299,7 @@ python scripts/generate_embeddings_v2.py 2026
 
 ```bash
 python scripts/degree_matched_negatives_v2.py 42
-
 python scripts/degree_matched_negatives_v2.py 123
-
 python scripts/degree_matched_negatives_v2.py 2026
 ```
 
@@ -266,7 +315,23 @@ This evaluates all three node2vec configurations and the Common Neighbors baseli
 
 The script saves individual-run results and the mean ± standard deviation summary.
 
-## Project Structure
+## Repository Structure
+
+The repository contains scripts for downloading and preprocessing the STRING dataset, constructing the interaction network, generating node2vec embeddings, performing link prediction, evaluating the Common Neighbors baseline and visualizing results.
+
+Important scripts include:
+download_data.py – downloads the STRING interaction dataset.
+preprocess_network.py – preprocesses the interaction network.
+prepare_link_prediction_v2.py – prepares the link-prediction data.
+generate_embeddings_v2.py – generates node2vec embeddings.
+link_prediction_v2.py – evaluates node2vec-based link prediction.
+common_neighbors.py – implements the Common Neighbors baseline.
+degree_matched_negatives.py and degree_matched_negatives_v2.py – support degree-matched negative sampling.
+link_prediction_degree_matched.py – evaluates degree-matched link prediction.
+plot_repeated_results_v2.py – visualizes repeated experimental results.
+plot_results.py and plot_sampling_comparison.py – generate result visualizations.
+
+The versioned scripts are retained from different stages of development. The scripts ending in _v2 contain the updated repeated-experiment workflow where applicable.
 
 ```text
 node2vec-PPI-Link-Prediction/
@@ -308,6 +373,6 @@ node2vec-PPI-Link-Prediction/
 
 Grover, A. & Leskovec, J. (2016). node2vec: Scalable Feature Learning for Networks. *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 855–864.
 
-[https://doi.org/10.1145/2939672.2939754](https://doi.org/10.1145/2939672.2939754)
+https://doi.org/10.1145/2939672.2939754
 
-STRING database: [https://string-db.org/](https://string-db.org/)
+STRING database: https://string-db.org/

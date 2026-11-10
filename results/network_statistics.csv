@@ -1,0 +1,8 @@
+Metric,Value
+Number of proteins (nodes),14404.0
+Number of interactions (edges),145815.0
+Average degree,20.246459316856427
+Network density,0.0014057112627130757
+Connected components,169.0
+Largest component size,13996.0
+Average clustering coefficient,0.37953575980265863
